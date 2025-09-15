@@ -1,0 +1,80 @@
+-- Roblox Mobile Fly Script
+-- Instructions: Place this script in StarterPlayerScripts
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+local userInputService = game:GetService("UserInputService")
+local flySpeed = 50 -- The speed at which the character will fly
+
+local isFlying = false
+local flyButton
+
+-- Function to create the on-screen fly button
+local function createFlyButton()
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "FlyControlGui"
+	screenGui.Parent = player:WaitForChild("PlayerGui")
+
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0, 100, 0, 100)
+	frame.Position = UDim2.new(1, -120, 1, -120) -- Bottom-right corner
+	frame.AnchorPoint = Vector2.new(1, 1)
+	frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+	frame.BackgroundTransparency = 0.5
+	frame.BorderSizePixel = 0
+	frame.Parent = screenGui
+
+	flyButton = Instance.new("TextButton")
+	flyButton.Size = UDim2.new(1, 0, 1, 0)
+	flyButton.Text = "Fly"
+	flyButton.Font = Enum.Font.SourceSansBold
+	flyButton.TextColor3 = Color3.new(1, 1, 1)
+	flyButton.BackgroundTransparency = 1
+	flyButton.Parent = frame
+
+	return flyButton
+end
+
+-- Function to toggle fly mode on and off
+local function toggleFlyMode()
+	isFlying = not isFlying
+	if isFlying then
+		humanoid.WalkSpeed = 0
+		humanoid.JumpPower = 0
+		humanoid.PlatformStand = true
+		flyButton.Text = "Stop Fly"
+	else
+		humanoid.WalkSpeed = 16
+		humanoid.JumpPower = 50
+		humanoid.PlatformStand = false
+		flyButton.Text = "Fly"
+	end
+end
+
+-- Check if the device is touch-enabled and create the button
+if userInputService.TouchEnabled then
+	flyButton = createFlyButton()
+	flyButton.TouchTap:Connect(function()
+		toggleFlyMode()
+	end)
+end
+
+-- Main loop to handle flying movement
+game:GetService("RunService").Stepped:Connect(function()
+	if isFlying and humanoidRootPart and humanoid.Health > 0 then
+		local moveDirection = humanoid.MoveDirection
+		
+		-- Use the default Roblox virtual joystick input for movement
+		if moveDirection.Magnitude > 0 then
+			humanoidRootPart.Velocity = moveDirection.unit * flySpeed
+		else
+			-- If there is no movement input, keep the character in place
+			humanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+		end
+		
+		-- To add up/down movement, you would need to add separate buttons
+		-- or detect a specific touch gesture.
+	end
+end)
