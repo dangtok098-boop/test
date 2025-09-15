@@ -1,0 +1,64 @@
+-- A variable to track the flying state
+local isFlying = false
+
+-- Get the local player and their character
+local player = game.Players.LocalPlayer
+local character = player.Character
+
+-- Function to toggle fly mode
+local function toggleFly()
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local rootPart = character.HumanoidRootPart
+
+        -- If currently flying, turn it off
+        if isFlying then
+            -- Unanchor the character to allow normal movement
+            rootPart.Anchored = false
+            isFlying = false
+            print("Fly mode has been turned off.")
+        
+        -- If not flying, turn it on
+        else
+            -- Anchor the character to hold them in place
+            rootPart.Anchored = true
+            isFlying = true
+            print("Fly mode has been turned on.")
+        end
+    end
+end
+
+-- Create a screen UI button to toggle the fly script
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FlyScriptUI"
+screenGui.Parent = player.PlayerGui
+
+local flyButton = Instance.new("TextButton")
+flyButton.Name = "FlyButton"
+flyButton.Text = "Toggle Fly"
+flyButton.Size = UDim2.new(0.15, 0, 0.05, 0)
+flyButton.Position = UDim2.new(0.8, 0, 0.8, 0) -- Positioned in the bottom-right corner
+flyButton.BackgroundColor3 = Color3.fromRGB(85, 255, 127)
+flyButton.Parent = screenGui
+
+-- Connect the toggleFly function to the button click event
+flyButton.MouseButton1Click:Connect(toggleFly)
+
+-- Main loop to handle movement while flying
+game:GetService("RunService").RenderStepped:Connect(function()
+    if isFlying and character and character:FindFirstChild("HumanoidRootPart") then
+        local rootPart = character.HumanoidRootPart
+        
+        -- Get input from the on-screen joystick
+        local moveDirection = player.Humanoid.MoveDirection
+
+        -- Move the character based on joystick input
+        if moveDirection.magnitude > 0 then
+            rootPart.CFrame = rootPart.CFrame + rootPart.CFrame.lookVector * moveDirection.Z * 0.5 + rootPart.CFrame.rightVector * moveDirection.X * 0.5
+        end
+
+        -- Check for jump input to move up
+        if player.Humanoid.Jump then
+            rootPart.CFrame = rootPart.CFrame * CFrame.new(0, 0.5, 0)
+        end
+    end
+end)
