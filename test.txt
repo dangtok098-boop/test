@@ -1,0 +1,90 @@
+using UnityEngine;
+
+public class FlightController : MonoBehaviour
+{
+    // Tốc độ bay của máy bay
+    [Header("Flight Settings")]
+    [Tooltip("Tốc độ bay tiến về phía trước")]
+    public float forwardSpeed = 10f;
+    [Tooltip("Tốc độ xoay (nhạy) khi chạm màn hình")]
+    public float rotationSpeed = 2f;
+    [Tooltip("Độ nhạy (nhân với tốc độ xoay)")]
+    public float touchSensitivity = 0.5f;
+
+    // Các biến nội bộ
+    private Rigidbody rb;
+    private Vector2 touchStartPosition;
+    private Vector2 touchCurrentPosition;
+    private Vector2 touchDelta;
+    private bool isTouching = false;
+
+    void Start()
+    {
+        // Lấy Rigidbody của đối tượng
+        rb = GetComponent<Rigidbody>();
+        if (rb == null)
+        {
+            Debug.LogError("Rigidbody component not found on this GameObject. Please add one.");
+        }
+    }
+
+    void Update()
+    {
+        HandleTouchInput();
+    }
+
+    void FixedUpdate()
+    {
+        if (rb != null)
+        {
+            // Di chuyển tiến về phía trước
+            rb.velocity = transform.forward * forwardSpeed;
+
+            // Xoay máy bay theo input
+            if (isTouching)
+            {
+                RotatePlane();
+            }
+        }
+    }
+
+    // Xử lý input từ màn hình cảm ứng
+    void HandleTouchInput()
+    {
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            if (touch.phase == TouchPhase.Began)
+            {
+                touchStartPosition = touch.position;
+                isTouching = true;
+            }
+            else if (touch.phase == TouchPhase.Moved)
+            {
+                touchCurrentPosition = touch.position;
+                touchDelta = (touchCurrentPosition - touchStartPosition) * touchSensitivity;
+            }
+            else if (touch.phase == TouchPhase.Ended)
+            {
+                isTouching = false;
+                touchDelta = Vector2.zero; // Reset lại delta khi nhấc ngón tay
+            }
+        }
+        else
+        {
+            isTouching = false;
+        }
+    }
+
+    // Xoay máy bay dựa trên cử chỉ vuốt
+    void RotatePlane()
+    {
+        float pitch = -touchDelta.y * rotationSpeed * Time.deltaTime; // Quay lên/xuống (trục X)
+        float yaw = touchDelta.x * rotationSpeed * Time.deltaTime;     // Quay trái/phải (trục Y)
+
+        // Tạo quaternion từ các góc Euler và áp dụng cho transform
+        Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+        rb.MoveRotation(rb.rotation * rotation);
+    }
+}
